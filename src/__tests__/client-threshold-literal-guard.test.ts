@@ -308,12 +308,17 @@ function hitsFor(rule: Rule): Map<string, string[]> {
   return out;
 }
 
+// Every rule's results are reused by its assertions and the non-empty guard.
+// Parsing the full client tree again for the final assertion exceeds Vitest's
+// default five-second test timeout on CI.
+const HITS = RULES.map(hitsFor);
+
 describe("client threshold literal guard", () => {
   it("walks a client tree of the size it expects", () => {
     expect(FILES.length).toBeGreaterThan(700);
   });
 
-  for (const rule of RULES) {
+  for (const [index, rule] of RULES.entries()) {
     describe(rule.name, () => {
       it("still catches the shape it exists to catch", () => {
         for (const sample of rule.samples) {
@@ -325,7 +330,7 @@ describe("client threshold literal guard", () => {
       });
 
       it("finds none outside its allowlist, and the allowlist exactly", () => {
-        const hits = hitsFor(rule);
+        const hits = HITS[index];
         const offenders = [...hits.entries()]
           .filter(([rel]) => !(rel in rule.allow))
           .flatMap(([, lines]) => lines);
@@ -346,9 +351,9 @@ describe("client threshold literal guard", () => {
   }
 
   it("reads a non-empty set of matches across the tree", () => {
-    const total = RULES.reduce(
-      (sum, rule) =>
-        sum + [...hitsFor(rule).values()].reduce((n, l) => n + l.length, 0),
+    const total = HITS.reduce(
+      (sum, hits) =>
+        sum + [...hits.values()].reduce((n, l) => n + l.length, 0),
       0,
     );
     expect(total).toBeGreaterThan(0);
