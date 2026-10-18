@@ -522,12 +522,17 @@ describe("mood context linkage (real Postgres)", () => {
       ),
     );
     expect(res.status).toBe(403);
-    const raw = await res.text();
-    // Asserted on the bytes, not on a parsed field: the point is that not one
-    // of the owner's figures reached the response.
-    expect(raw).not.toContain("7777");
-    expect(raw).not.toContain("55");
-    expect(raw).not.toContain("functionalImpact");
+    // An exact denied-response shape proves that no record data or extra
+    // fields escaped, without mistaking digits in the random request ID
+    // for a leaked measurement.
+    expect(await res.json()).toEqual({
+      data: null,
+      error: "Account access denied",
+      meta: {
+        errorCode: "sharing.access.denied",
+        requestId: expect.any(String),
+      },
+    });
   });
 
   it("refuses a malformed day", async () => {

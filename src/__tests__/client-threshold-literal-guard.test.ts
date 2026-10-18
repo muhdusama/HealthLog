@@ -352,8 +352,7 @@ describe("client threshold literal guard", () => {
 
   it("reads a non-empty set of matches across the tree", () => {
     const total = HITS.reduce(
-      (sum, hits) =>
-        sum + [...hits.values()].reduce((n, l) => n + l.length, 0),
+      (sum, hits) => sum + [...hits.values()].reduce((n, l) => n + l.length, 0),
       0,
     );
     expect(total).toBeGreaterThan(0);
